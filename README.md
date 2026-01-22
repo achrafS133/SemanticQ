@@ -1,10 +1,10 @@
 # SemantiQ: Bloom's Taxonomy Question Classifier
 
-A machine learning system for automatically classifying educational questions by Bloom's Taxonomy cognitive levels using **SemantiQ** (Semantic-BERT and Semantic-FastText) approaches.
+Classify educational questions into Bloom's Taxonomy cognitive levels using **S-BERT** and **S-FastText** models with semantic enrichment.
 
-## 🎯 Overview
+## Overview
 
-This project (SemantiQ) implements two complementary approaches for classifying educational questions into Bloom's Taxonomy cognitive levels:
+This project implements the methodology from the research paper *"Semantic-BERT and semantic-FastText models for education question classification"*. It classifies questions into 6 cognitive levels:
 
 | Level | Description | Example |
 |-------|-------------|---------|
@@ -15,88 +15,131 @@ This project (SemantiQ) implements two complementary approaches for classifying 
 | **Evaluate** | Justify a decision or course of action | "Assess the effectiveness of this policy." |
 | **Create** | Produce new or original work | "Design an experiment to test plant growth." |
 
-## ✨ Key Features
+## Key Features
 
-- **Semantic Dependency Parsing**: Uses spaCy to extract word relationships (Subject-Verb-Object) for better intent detection
-- **Merged Dataset**: 229 high-quality questions from EDUPRESS EP 729 and GitHub educational corpora
-- **Dual Model Support**: Choose between lightweight FastText or powerful BERT
+- **Semantic Dependency Parsing**: Uses spaCy to extract word relationships (QW, ROOT, NOUN, PROPN) for intent detection
+- **Data Augmentation**: LLM-powered generation (Ollama) with semantic filtering to address class imbalance
+- **Dual Model Architecture**: S-FastText (fast, lightweight) and S-BERT (higher accuracy)
 - **Streamlit Web App**: Interactive classification with probability visualizations
-- **Pedagogically Aligned**: Results ordered by cognitive hierarchy
+- **5W1H Coverage**: Optimized for Who, What, Where, When, Why, How questions
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 SemantiQ/
+├── app.py                      # Streamlit Web Application
+├── config/
+│   └── config.yaml             # Hyperparameters
 ├── data/
-│   ├── raw/                    # Original dataset files (229 samples)
-│   ├── processed/              # Cleaned and tokenized data
-│   └── splits/                 # Train/val/test splits
-├── src/
-│   ├── preprocessing.py        # Text cleaning + Semantic Dependency Parsing
-│   ├── dataset.py              # PyTorch datasets
-│   ├── fasttext_classifier.py  # FastText + SVM/MLP pipeline
-│   ├── bert_classifier.py      # BERT fine-tuning
-│   ├── evaluate.py             # Metrics and confusion matrices
-│   └── inference.py            # Unified prediction API
+│   ├── raw/                    # Original + augmented datasets
+│   ├── processed/              # Train/val/test splits (CSV)
+│   └── dataset/                # Source data files
+├── docs/
+│   ├── presentations/          # Project presentations (.pptx)
+│   └── research paper (PDF)
 ├── models/
-│   ├── fasttext/               # Saved FastText models
-│   └── bert/                   # Saved BERT checkpoints
+│   ├── s-fasttext.bin          # Trained FastText model
+│   ├── s-bert.pth              # BERT state dictionary
+│   └── s-bert_model/           # Full BERT model directory
 ├── notebooks/
 │   ├── 01_eda.ipynb            # Exploratory data analysis
 │   ├── 02_fasttext_train.ipynb # FastText training
-│   └── 03_bert_train.ipynb     # BERT training
-├── config/
-│   └── config.yaml             # Hyperparameters
-├── app.py                      # Streamlit Web Application
+│   ├── 03_bert_train.ipynb     # BERT training
+│   ├── 04_inference_demo.ipynb # Model inference demo
+│   ├── 05_data_augmentation.ipynb # LLM-based data augmentation
+│   └── final.ipynb             # Complete training pipeline
+├── scripts/                    # Utility scripts
+├── src/
+│   ├── preprocessing.py        # Text cleaning + Semantic Parsing
+│   ├── dataset.py              # PyTorch datasets
+│   ├── fasttext_classifier.py  # S-FastText implementation
+│   ├── bert_classifier.py      # S-BERT implementation
+│   ├── evaluate.py             # Metrics and evaluation
+│   └── inference.py            # Unified prediction API
+├── logs/                       # Training logs
 └── requirements.txt
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
 pip install -r requirements.txt
-python -m spacy download en_core_web_md
+python -m spacy download en_core_web_sm
 ```
 
-### 2. Train FastText Model
-
-```bash
-python src/fasttext_classifier.py --data data/raw/bloom_questions.csv --text-col question --label-col level
-```
-
-### 3. Train BERT Model (requires GPU)
-
-```bash
-python src/bert_classifier.py --data data/raw/bloom_questions.csv --text-col question --label-col level --epochs 5
-```
-
-### 4. Run Streamlit App
+### 2. Run Streamlit App
 
 ```bash
 streamlit run app.py
 ```
 
-### 5. Run Inference (CLI)
+### 3. Train Models (Optional)
+
+Run the complete training pipeline:
+```bash
+# Open and run notebooks/final.ipynb
+# Or run the individual training notebooks
+```
+
+### 4. Run Inference (CLI)
 
 ```python
 from src.inference import BloomClassifier
 
-# FastText (faster, lighter)
 classifier = BloomClassifier(model_type="fasttext")
 result = classifier.predict("What is photosynthesis?")
-print(result)
-# {'level': 'Remember', 'confidence': 0.92, 'description': 'Recall facts and basic concepts'}
+# {'level': 'Remember', 'confidence': 0.92}
 
-# BERT (higher accuracy)
 classifier = BloomClassifier(model_type="bert")
 result = classifier.predict("Design an experiment to test plant growth")
-print(result)
-# {'level': 'Create', 'confidence': 0.95, 'description': 'Produce new or original work'}
+# {'level': 'Create', 'confidence': 0.95}
 ```
 
-## 📊 Evaluation
+## Model Configurations
+
+### S-FastText (Algorithm 2)
+| Parameter | Value |
+|-----------|-------|
+| Learning Rate | 0.3 |
+| Epochs | 10 |
+| Word N-grams | 2 |
+| Embedding Dim | 100 |
+
+### S-BERT (Algorithm 3)
+| Parameter | Value |
+|-----------|-------|
+| Base Model | bert-base-uncased |
+| Max Length | 128 |
+| Batch Size | 16 |
+| Learning Rate | 4e-5 |
+| Epochs | 3 |
+
+## Data Augmentation Pipeline
+
+The `05_data_augmentation.ipynb` notebook implements:
+
+1. **Distribution Analysis**: Identify minority classes needing augmentation
+2. **Expert Prompting**: Use Ollama LLM with "Data Engineer" persona
+3. **5W1H Constraints**: Enforce question diversity (How, Why, What, Imperatives)
+4. **Semantic Filtering**: Validate questions using spaCy (ROOT verb check)
+5. **Merge & Export**: Combine synthetic data with original training set
+
+## Semantic Enrichment
+
+Text preprocessing enriches questions with dependency tags:
+```
+Input:  "What is an atom?"
+Output: "what_QW is_ROOT atom_NOUN"
+```
+
+Tags applied:
+- `_QW`: Wh-words (What, Why, How, etc.)
+- `_ROOT`: Main action verb
+- `_NOUN` / `_PROPN`: Nouns and proper nouns
+
+## Evaluation
 
 Run evaluation on test set:
 
@@ -104,60 +147,21 @@ Run evaluation on test set:
 python src/evaluate.py --model both --test-data data/processed/test.csv
 ```
 
-This generates:
-- Accuracy, Precision, Recall, F1-score metrics
+Outputs:
+- Accuracy, Precision, Recall, F1-score
 - Confusion matrices for each model
 - Model comparison charts
 
-## ⚙️ Configuration
+## Research Reference
 
-Edit `config/config.yaml` to modify:
-
-- Data split ratios
-- FastText embedding parameters
-- Classifier type (SVM or MLP)
-- BERT fine-tuning hyperparameters
-- **Semantic Parsing** (on/off)
-
-## 📚 Methods (Based on Research Paper)
-
-### Semantic-FastText (S-FastText)
-1. **Semantic Dependency Parsing**: Extract word roles using spaCy
-2. **Train FastText embeddings** on enriched text
-3. **Generate sentence vectors** by averaging word embeddings
-4. **Train SVM classifier** on sentence vectors
-
-### Semantic-BERT (S-BERT)
-1. **Load pre-trained** `bert-base-uncased` model
-2. **Add classification head** (768 → 6 classes)
-3. **Fine-tune end-to-end** with AdamW optimizer
-
-## 📈 Dataset Information
-
-| Source | Samples | Classes |
-|--------|---------|---------|
-| EDUPRESS EP 729 | ~100 | 6 |
-| GitHub Educational Corpus | ~130 | 6 |
-| **Total** | **229** | **6** |
-
-### Class Distribution
-- Create: 56 (24%)
-- Understand: 51 (22%)
-- Remember: 41 (18%)
-- Analyze: 31 (14%)
-- Evaluate: 30 (13%)
-- Apply: 20 (9%)
-
-## 🔬 Research Reference
-
-This implementation is based on the paper:
+Based on the paper:
 > **"Semantic-BERT and semantic-FastText models for education question classification"**
 
-Key contributions from the paper:
-- Semantic Dependency Parsing for better intent detection
+Key contributions:
+- Semantic Dependency Parsing for intent detection
 - Functional role enrichment of question text
 - High accuracy on 5W1H educational questions
 
-## 📄 License
+## License
 
 MIT License
