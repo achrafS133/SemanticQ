@@ -162,6 +162,12 @@ Key contributions:
 - Functional role enrichment of question text
 - High accuracy on 5W1H educational questions
 
+## Author
+
+**ER-RAHOUTI ACHRAF**
+
+- GitHub: [@achrafS133](https://github.com/achrafS133)
+
 ## License
 
 MIT License
