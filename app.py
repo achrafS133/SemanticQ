@@ -6,6 +6,14 @@ This app classifies educational questions into Bloom's Taxonomy levels:
 - Remember, Understand, Apply, Analyze, Evaluate, Create
 """
 
+# Suppress warnings before importing heavy libraries
+import os
+import warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # Suppress TensorFlow logs
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'  # Disable oneDNN warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=DeprecationWarning)
+
 import streamlit as st
 import torch
 import fasttext
@@ -18,7 +26,7 @@ from pathlib import Path
 # ============================================
 # Configuration
 # ============================================
-MODELS_DIR = Path(__file__).parent / "notebooks"
+MODELS_DIR = Path(__file__).parent / "models"
 FASTTEXT_MODEL_PATH = MODELS_DIR / "s-fasttext.bin"
 BERT_MODEL_DIR = MODELS_DIR / "s-bert_model"
 
